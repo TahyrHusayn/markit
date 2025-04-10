@@ -1,1 +1,0 @@
-mongodb+srv://atlas-sample-dataset-load-67f76693a2baa56957b2c91b:<db_password>@cluster0.luf42tl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
