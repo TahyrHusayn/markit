@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { FpjsProvider } from "@fingerprintjs/fingerprintjs-pro-react";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MarkIt",
-  description: "Modern Student Attendence System.",
+  description: "Modern Student Attendance System.",
 };
 
 export default function RootLayout({
@@ -27,7 +29,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <FpjsProvider
+          loadOptions={{
+            apiKey: process.env.NEXT_PUBLIC_FP_PUBLIC_KEY ?? "",
+          }}
+        >
+          {children}
+        </FpjsProvider>
       </body>
     </html>
   );
