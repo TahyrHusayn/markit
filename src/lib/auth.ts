@@ -80,7 +80,7 @@ export const authOptions: NextAuthOptions = {
     newUser: "/signup",
   },
   callbacks: {
-    async session({ session, token }: any) {
+    async session({ session, token }) {
       session.user.id = token.sub;
       return session;
     },
