@@ -72,11 +72,11 @@ export function SignupForm({ className, ...props }: ComponentProps<"div">) {
 
                 <div className="grid grid-cols-2 gap-6">
                   <div className="grid gap-3">
-                    <Label htmlFor="fatherName">Father's Name</Label>
+                    <Label htmlFor="fatherName">Father&apos;s Name</Label>
                     <Input id="fatherName" type="text" required />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="motherName">Mother's Name</Label>
+                    <Label htmlFor="motherName">Mother&apos;s Name</Label>
                     <Input id="motherName" type="text" required />
                   </div>
                 </div>
@@ -84,13 +84,13 @@ export function SignupForm({ className, ...props }: ComponentProps<"div">) {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="grid gap-3">
                     <Label htmlFor="fatherPhoneNumber">
-                      Father's Phone Number
+                      Father&apos;s Phone Number
                     </Label>
                     <Input id="fatherPhoneNumber" type="tel" required />
                   </div>
                   <div className="grid gap-3">
                     <Label htmlFor="motherPhoneNumber">
-                      Mother's Phone Number
+                      Mother&apos;s Phone Number
                     </Label>
                     <Input id="motherPhoneNumber" type="tel" required />
                   </div>

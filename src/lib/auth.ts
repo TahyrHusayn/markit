@@ -15,7 +15,7 @@ export const authOptions: NextAuthOptions = {
         studenId: { label: "Student ID", type: "text", placeholder: "22bc8010" },
         password: { label: "Password", type: "password", placeholder: "password" }
       },
-      async authorize(credentials: any): Promise<any> {
+      async authorize(credentials) {
         try {
           if (!credentials || !credentials.studenId || !credentials.password) {
             throw new Error("Student ID and password are required");
@@ -43,7 +43,7 @@ export const authOptions: NextAuthOptions = {
             }
           } else {
             // Hash the provided password
-            const hashedPassword = await bcrypt.hash(password, 10);
+            // const hashedPassword = await bcrypt.hash(password, 10);
 
             // Create new user
             const newUser = await prisma.user.create({
@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
               email: newUser.email,
             };
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error("Authorization error:", error);
           throw new Error("Failed to authorize user");
         }
