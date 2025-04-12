@@ -9,35 +9,18 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  email       String   @unique
-  name        String
-  phoneNumber String   @unique
-  role        Role     @default(STUDENT)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Student specific fields
-  studentId             String?   @unique
-  fatherName            String?
-  motherName            String?
-  fatherPhoneNumber     String?
-  motherPhoneNumber     String?
-  dateOfBirth           DateTime?
-  address               String?
-  course                String?
-  department            String?
-  yearOfStudy           Int?
-  profilePicture        String? // URL to stored image
-  emergencyContactName  String?
-  emergencyContactPhone String?
-  password              String? // Hashed password if needed
-  hasConsented          Boolean?  @default(false)
-  agreedToTerms         Boolean?  @default(false)
-
-  // Admin specific status
-  isActive  Boolean @default(true)
-  createdBy String? @db.ObjectId // ID of admin who created this user
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  email         String   @unique
+  name          String
+  phoneNumber   String   @unique
+  role          Role     @default(STUDENT)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     String?  @db.ObjectId // ID of admin who created this user
+  password      String? // Hashed password if needed
+  hasConsented  Boolean? @default(false)
+  agreedToTerms Boolean? @default(false)
+  isActive      Boolean  @default(true)
 
   // Relationships
   student            Student?
@@ -64,9 +47,23 @@ model Student {
   id              String  @id @default(auto()) @map("_id") @db.ObjectId
   userId          String  @unique @db.ObjectId
   user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId       String? @unique
   enrollmentYear  Int?
   currentSemester Int?
   isGraduated     Boolean @default(false)
+
+  // Student specific details (moved from User)
+  fatherName            String?
+  motherName            String?
+  fatherPhoneNumber     String?
+  motherPhoneNumber     String?
+  dateOfBirth           DateTime?
+  address               String?
+  course                String?
+  department            String?
+  yearOfStudy           Int?
+  emergencyContactName  String?
+  emergencyContactPhone String?
 
   @@map("students")
 }
@@ -184,9 +181,10 @@ model AttendanceRecord {
   modifiedAt        DateTime?
   notes             String?
   qrCodeId          String?          @db.ObjectId
-  isPresent         Boolean          @default(false)
-  entryMarked       Boolean          @default(false)
-  exitMarked        Boolean          @default(false)
+  // Consider if these can be derived from the status enum
+  // isPresent         Boolean          @default(false)
+  // entryMarked       Boolean          @default(false)
+  // exitMarked        Boolean          @default(false)
 
   @@unique([userId, date], name: "user_daily_attendance")
   @@map("attendance_records")
@@ -198,6 +196,9 @@ enum AttendanceStatus {
   ABSENT // No scan done
   EXCUSED // Absence excused by admin
   INVALID // Wrong device or location
+  PRESENT // Could potentially replace isPresent
+  ENTRY_MARKED // Could potentially represent entryMarked
+  EXIT_MARKED // Could potentially represent exitMarked
 }
 
 model QRCode {
@@ -226,7 +227,7 @@ model CampusLocation {
   longitude Float
   radius    Float // Radius in meters for valid attendance marking
   startTime String // Format: "09:00" - When attendance marking starts
-  endTime   String // Format: "17:00" - When attendance marking ends
+  endTime   String // Format: "17:00" - When attendance marking starts
   isActive  Boolean @default(true)
 
   @@map("campus_locations")
