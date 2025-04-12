@@ -70,7 +70,7 @@ export function SignupForm({
                     />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="email">Father's Name</Label>
+                    <Label htmlFor="email">Father&aposs Name</Label>
                     <Input
                       id="name"
                       type="name"
@@ -79,7 +79,7 @@ export function SignupForm({
                     />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="email">Mother's Name</Label>
+                    <Label htmlFor="email">Mother&aposs Name</Label>
                     <Input
                       id="name"
                       type="name"
@@ -97,7 +97,7 @@ export function SignupForm({
                     />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="email">Mother's Ph.</Label>
+                    <Label htmlFor="email">Mother&aposs Ph.</Label>
                     <Input
                       id="email"
                       type="email"
