@@ -85,25 +85,25 @@ model User {
 }
 
 model Student {
-  id                    String  @id @default(uuid())
-  userId                String  @unique
-  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  studentId             String? @unique
+  id                    String    @id @default(uuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId             String?   @unique
   enrollmentYear        Int?
   currentSemester       Int?
-  isGraduated           Boolean @default(false)
+  isGraduated           Boolean   @default(false)
   fatherName            String?
   motherName            String?
   fatherPhoneNumber     String?
   motherPhoneNumber     String?
-  dateOfBirth           String?
+  dateOfBirth           DateTime?
   address               String?
   course                String?
   department            String?
   yearOfStudy           Int?
   emergencyContactName  String?
   emergencyContactPhone String?
-  agreedToTerms         Boolean @default(false)
+  agreedToTerms         Boolean   @default(false)
 }
 
 model Admin {

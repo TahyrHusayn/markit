@@ -96,13 +96,6 @@ export function SignupForm({ className, ...props }: ComponentProps<"div">) {
     }
   };
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedDate = e.target.value; // This will be in "YYYY-MM-DD" format
-    const dateObject = new Date(selectedDate);
-    const isoDateString = dateObject.toISOString();
-    console.log("Sending ISO Date:", isoDateString);
-  };
-
   return (
     <FpjsProvider
       loadOptions={{ apiKey: process.env.NEXT_PUBLIC_FP_PUBLIC_KEY ?? "" }}
@@ -242,8 +235,11 @@ export function SignupForm({ className, ...props }: ComponentProps<"div">) {
                   <Input
                     id="dateOfBirth"
                     type="date"
-                    value={dateOfBirth}
-                    onChange={handleDateChange}
+                    value={dateOfBirth ? dateOfBirth.slice(0, 10) : ""} // extract only the 'YYYY-MM-DD' part
+                    onChange={(e) => {
+                      const isoDate = new Date(e.target.value).toISOString(); // keep ISO format internally
+                      setDateOfBirth(isoDate);
+                    }}
                     required
                   />
                 </div>
