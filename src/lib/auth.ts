@@ -38,7 +38,6 @@ export const authOptions: NextAuthOptions = {
       // In your auth.ts, within the authorize function:
       async authorize(credentials: any) {
         try {
-          console.log("Credentials received:", credentials);
 
           if (!credentials || !credentials.password) {
             throw new Error("Password is required");
@@ -57,7 +56,6 @@ export const authOptions: NextAuthOptions = {
           let existingUser: User | null = null;
 
           if (email && email !== "undefined") {
-            console.log("Searching for user with email:", email);
             existingUser = await prisma.user.findFirst({
               where: {
                 email: email,
@@ -65,7 +63,6 @@ export const authOptions: NextAuthOptions = {
               },
             });
           } else if (studentId && studentId !== "undefined") {
-            console.log("Searching for user with studentId:", studentId);
             existingUser = await prisma.user.findFirst({
               where: {
                 student: {
@@ -78,15 +75,9 @@ export const authOptions: NextAuthOptions = {
             });
           }
 
-          console.log("User found:", existingUser); // Log the user object (or null)
-
           if (!existingUser) {
-            console.log("User not found");
             return null;
-          }
-
-          if (!existingUser.password) {
-            console.log("User has no password set");
+          } else if (!existingUser.password) {
             throw new Error("User has no password set");
           }
 
@@ -94,7 +85,6 @@ export const authOptions: NextAuthOptions = {
             password,
             existingUser.password
           );
-          console.log("Password match:", passwordValidation); // Log the result of password comparison
 
           if (passwordValidation) {
             return {
@@ -104,7 +94,6 @@ export const authOptions: NextAuthOptions = {
               role: existingUser.role,
             } as CustomUser;
           } else {
-            console.log("Invalid password");
             throw new Error("Invalid password");
           }
         } catch (error) {
@@ -124,7 +113,6 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
-        console.log("JWT callback - adding role to token:", token.role);
       }
       return token;
     },
@@ -136,7 +124,6 @@ export const authOptions: NextAuthOptions = {
           | "ADMIN"
           | "SUPER_ADMIN"
           | undefined;
-        console.log("Session callback - setting user role:", session.user.role);
       }
       return session;
     },

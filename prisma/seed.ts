@@ -23,7 +23,7 @@ async function seed() {
         },
       },
     });
-    console.log("Initial Super Admin created:", newUser);
+    console.log("Initial Super Admin created");
   } else {
     console.log("Initial Super Admin already exists.");
   }

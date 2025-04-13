@@ -43,7 +43,6 @@ export async function POST(req: Request) {
       agreedToTerms: boolean
     } = body;
 
-    console.log("Received dateOfBirth:", dateOfBirth);
 
     if (!name || !email || !phoneNumber || !studentId || !password) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
