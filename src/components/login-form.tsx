@@ -3,7 +3,7 @@
 import { useState, ComponentProps } from "react";
 import { FpjsProvider } from "@fingerprintjs/fingerprintjs-pro-react";
 import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, useSession, signOut } from "next-auth/react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
       setLoginError(result.error); // Set the error message from NextAuth.js
     } else {
       // Successful login, redirect to the callbackUrl
-      router.push(result?.url || "/");
+      router.push(result?.url || "/home");
     }
   };
 
@@ -53,7 +53,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
       <div className={cn("flex flex-col gap-6", className)} {...props}>
         <Card>
           <CardHeader>
-            <CardTitle>Login to your account</CardTitle>  
+            <CardTitle>Login to your account</CardTitle>
             <CardDescription>
               Enter your email below to login to your account
             </CardDescription>
@@ -113,6 +113,11 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
                 </div>
                 <Button type="submit" className="w-full">
                   Login
+                </Button>
+                <Button
+                  onClick={() => signOut({ redirect: true, callbackUrl: "/" })}
+                >
+                  Sign Out
                 </Button>
               </div>
               <div className="mt-4 text-center text-sm">

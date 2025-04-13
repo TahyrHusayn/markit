@@ -74,6 +74,7 @@ export function SignupForm({ className, ...props }: ComponentProps<"div">) {
           yearOfStudy,
           emergencyContactName,
           emergencyContactPhone,
+          agreedToTerms,
         }),
       });
 
@@ -93,6 +94,13 @@ export function SignupForm({ className, ...props }: ComponentProps<"div">) {
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
     }
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.value; // This will be in "YYYY-MM-DD" format
+    const dateObject = new Date(selectedDate);
+    const isoDateString = dateObject.toISOString();
+    console.log("Sending ISO Date:", isoDateString);
   };
 
   return (
@@ -235,7 +243,7 @@ export function SignupForm({ className, ...props }: ComponentProps<"div">) {
                     id="dateOfBirth"
                     type="date"
                     value={dateOfBirth}
-                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    onChange={handleDateChange}
                     required
                   />
                 </div>

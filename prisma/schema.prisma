@@ -4,103 +4,14 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-model User {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  email         String   @unique
-  name          String
-  phoneNumber   String   @unique
-  role          Role     @default(STUDENT)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  createdBy     String?  @db.ObjectId // ID of admin who created this user
-  password      String // Hashed password if needed
-  agreedToTerms Boolean? @default(false)
-  isActive      Boolean  @default(true)
-
-  // Relationships
-  student            Student?
-  admin              Admin?
-  superAdmin         SuperAdmin?
-  deviceFingerprint  DeviceFingerprint?
-  attendanceRecords  AttendanceRecord[]
-  adminActions       AdminAction[] // Actions performed by this admin
-  loginAttempts      LoginAttempt[]
-  deviceResets       DeviceResetHistory[] @relation("ResetBy")
-  deviceResetsTarget DeviceResetHistory[] @relation("ResetFor")
-  resetCodes         ResetCode[]
-
-  // NextAuth.js related fields (added)
-  accounts Account[]
-  sessions Session[]
-
-  @@map("users")
 }
 
 enum Role {
   STUDENT
   ADMIN
   SUPER_ADMIN
-}
-
-model Student {
-  id              String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String  @unique @db.ObjectId
-  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  studentId       String? @unique
-  enrollmentYear  Int?
-  currentSemester Int?
-  isGraduated     Boolean @default(false)
-
-  // Student specific details (moved from User)
-  fatherName            String?
-  motherName            String?
-  fatherPhoneNumber     String?
-  motherPhoneNumber     String?
-  dateOfBirth           DateTime?
-  address               String?
-  course                String?
-  department            String?
-  yearOfStudy           Int?
-  emergencyContactName  String?
-  emergencyContactPhone String?
-
-  @@map("students")
-}
-
-model Admin {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId     String   @unique @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignedBy String?  @db.ObjectId // ID of SuperAdmin who assigned this role
-  assignedAt DateTime @default(now())
-
-  @@map("admins")
-}
-
-model SuperAdmin {
-  id             String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String  @unique @db.ObjectId
-  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  departmentHead String? // Department they are head of
-
-  @@map("super_admins")
-}
-
-model AdminAction {
-  id           String          @id @default(auto()) @map("_id") @db.ObjectId
-  adminId      String          @db.ObjectId
-  admin        User            @relation(fields: [adminId], references: [id])
-  actionType   AdminActionType
-  targetUserId String?         @db.ObjectId // If action was on a user
-  description  String
-  metadata     Json? // Additional info about the action
-  createdAt    DateTime        @default(now())
-
-  @@map("admin_actions")
 }
 
 enum AdminActionType {
@@ -115,50 +26,6 @@ enum AdminActionType {
   OTHER
 }
 
-model DeviceFingerprint {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String   @unique @db.ObjectId
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fingerprint     String // Unique device identifier
-  deviceType      String // Should be "PHONE" for valid signup
-  deviceModel     String? // Additional device info
-  browser         String?
-  operatingSystem String?
-  registeredAt    DateTime @default(now())
-  lastUsed        DateTime @default(now())
-  isActive        Boolean  @default(true)
-
-  @@map("device_fingerprints")
-}
-
-model DeviceResetHistory {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
-  user           User     @relation("ResetFor", fields: [userId], references: [id])
-  resetByUserId  String   @db.ObjectId
-  resetBy        User     @relation("ResetBy", fields: [resetByUserId], references: [id])
-  oldFingerprint String?
-  newFingerprint String?
-  reason         String?
-  resetAt        DateTime @default(now())
-
-  @@map("device_reset_history")
-}
-
-model LoginAttempt {
-  id                String      @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String      @db.ObjectId
-  user              User        @relation(fields: [userId], references: [id])
-  deviceFingerprint String
-  ipAddress         String?
-  userAgent         String?
-  location          Json? // GPS coordinates
-  status            LoginStatus
-  timestamp         DateTime    @default(now())
-
-  @@map("login_attempts")
-}
-
 enum LoginStatus {
   SUCCESS
   FAILED_WRONG_DEVICE
@@ -167,101 +34,20 @@ enum LoginStatus {
   FAILED_OTHER
 }
 
-model AttendanceRecord {
-  id                String           @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String           @db.ObjectId
-  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime         @default(now())
-  entryTime         DateTime?
-  exitTime          DateTime?
-  status            AttendanceStatus @default(INCOMPLETE)
-  entryLocation     Json? // GPS coordinates for entry
-  exitLocation      Json? // GPS coordinates for exit
-  deviceFingerprint String? // Stored fingerprint at time of attendance
-  isManuallyAdded   Boolean          @default(false)
-  addedBy           String?          @db.ObjectId // If manually added by admin
-  modifiedBy        String?          @db.ObjectId // If modified by admin
-  modifiedAt        DateTime?
-  notes             String?
-  qrCodeId          String?          @db.ObjectId
-  // Consider if these can be derived from the status enum
-  // isPresent         Boolean          @default(false)
-  // entryMarked       Boolean          @default(false)
-  // exitMarked        Boolean          @default(false)
-
-  @@unique([userId, date], name: "user_daily_attendance")
-  @@map("attendance_records")
-}
-
 enum AttendanceStatus {
-  COMPLETE // Both entry and exit scans done
-  INCOMPLETE // Only entry scan done
-  ABSENT // No scan done
-  EXCUSED // Absence excused by admin
-  INVALID // Wrong device or location
-  PRESENT // Could potentially replace isPresent
-  ENTRY_MARKED // Could potentially represent entryMarked
-  EXIT_MARKED // Could potentially represent exitMarked
-}
-
-model QRCode {
-  id         String     @id @default(auto()) @map("_id") @db.ObjectId
-  code       String     @unique
-  type       QRCodeType
-  expiresAt  DateTime
-  isActive   Boolean    @default(true)
-  createdBy  String     @db.ObjectId
-  createdAt  DateTime   @default(now())
-  lastUsed   DateTime?
-  usageCount Int        @default(0)
-
-  @@map("qr_codes")
+  COMPLETE
+  INCOMPLETE
+  ABSENT
+  EXCUSED
+  INVALID
+  PRESENT
+  ENTRY_MARKED
+  EXIT_MARKED
 }
 
 enum QRCodeType {
   ENTRY
   EXIT
-}
-
-model CampusLocation {
-  id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  latitude  Float
-  longitude Float
-  radius    Float // Radius in meters for valid attendance marking
-  startTime String // Format: "09:00" - When attendance marking starts
-  endTime   String // Format: "17:00" - When attendance marking starts
-  isActive  Boolean @default(true)
-
-  @@map("campus_locations")
-}
-
-model AttendanceReport {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  dateRange   Json // { startDate, endDate }
-  filters     Json? // Any filters applied (department, course, etc.)
-  format      String // PDF, Excel, etc.
-  generatedBy String   @db.ObjectId
-  generatedAt DateTime @default(now())
-  url         String? // Storage URL for the report
-  summary     Json? // Attendance summary statistics
-
-  @@map("attendance_reports")
-}
-
-model ResetCode {
-  id        String       @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String       @db.ObjectId
-  user      User         @relation(fields: [userId], references: [id])
-  code      String
-  purpose   ResetPurpose
-  expiresAt DateTime
-  isUsed    Boolean      @default(false)
-  createdAt DateTime     @default(now())
-  usedAt    DateTime?
-
-  @@map("reset_codes")
 }
 
 enum ResetPurpose {
@@ -270,41 +56,218 @@ enum ResetPurpose {
   ACCOUNT_VERIFICATION
 }
 
+// ======================= MODELS =======================
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  name        String
+  phoneNumber String   @unique
+  role        Role     @default(STUDENT)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+  password    String
+  isActive    Boolean  @default(true)
+
+  student            Student?
+  admin              Admin?
+  superAdmin         SuperAdmin?
+  deviceFingerprint  DeviceFingerprint?
+  attendanceRecords  AttendanceRecord[]
+  adminActions       AdminAction[]        @relation("AdminActions")
+  loginAttempts      LoginAttempt[]
+  deviceResets       DeviceResetHistory[] @relation("ResetBy")
+  deviceResetsTarget DeviceResetHistory[] @relation("ResetFor")
+  resetCodes         ResetCode[]
+  accounts           Account[]
+  sessions           Session[]
+}
+
+model Student {
+  id                    String  @id @default(uuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  studentId             String? @unique
+  enrollmentYear        Int?
+  currentSemester       Int?
+  isGraduated           Boolean @default(false)
+  fatherName            String?
+  motherName            String?
+  fatherPhoneNumber     String?
+  motherPhoneNumber     String?
+  dateOfBirth           String?
+  address               String?
+  course                String?
+  department            String?
+  yearOfStudy           Int?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  agreedToTerms         Boolean @default(false)
+}
+
+model Admin {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy String?
+  assignedAt DateTime @default(now())
+}
+
+model SuperAdmin {
+  id             String  @id @default(uuid())
+  userId         String  @unique
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentHead String?
+}
+
+model AdminAction {
+  id           String          @id @default(uuid())
+  adminId      String
+  admin        User            @relation("AdminActions", fields: [adminId], references: [id])
+  actionType   AdminActionType
+  targetUserId String?
+  description  String
+  metadata     Json?
+  createdAt    DateTime        @default(now())
+}
+
+model DeviceFingerprint {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fingerprint     String
+  deviceType      String
+  deviceModel     String?
+  browser         String?
+  operatingSystem String?
+  registeredAt    DateTime @default(now())
+  lastUsed        DateTime @default(now())
+  isActive        Boolean  @default(true)
+}
+
+model DeviceResetHistory {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation("ResetFor", fields: [userId], references: [id])
+  resetByUserId  String
+  resetBy        User     @relation("ResetBy", fields: [resetByUserId], references: [id])
+  oldFingerprint String?
+  newFingerprint String?
+  reason         String?
+  resetAt        DateTime @default(now())
+}
+
+model LoginAttempt {
+  id                String      @id @default(uuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id])
+  deviceFingerprint String
+  ipAddress         String?
+  userAgent         String?
+  location          Json?
+  status            LoginStatus
+  timestamp         DateTime    @default(now())
+}
+
+model AttendanceRecord {
+  id                String           @id @default(uuid())
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime         @default(now())
+  entryTime         DateTime?
+  exitTime          DateTime?
+  status            AttendanceStatus @default(INCOMPLETE)
+  entryLocation     Json?
+  exitLocation      Json?
+  deviceFingerprint String?
+  isManuallyAdded   Boolean          @default(false)
+  addedBy           String?
+  modifiedBy        String?
+  modifiedAt        DateTime?
+  notes             String?
+  qrCodeId          String?
+
+  @@unique([userId, date], name: "user_daily_attendance")
+}
+
+model QRCode {
+  id         String     @id @default(uuid())
+  code       String     @unique
+  type       QRCodeType
+  expiresAt  DateTime
+  isActive   Boolean    @default(true)
+  createdBy  String
+  createdAt  DateTime   @default(now())
+  lastUsed   DateTime?
+  usageCount Int        @default(0)
+}
+
+model CampusLocation {
+  id        String  @id @default(uuid())
+  name      String
+  latitude  Float
+  longitude Float
+  radius    Float
+  startTime String
+  endTime   String
+  isActive  Boolean @default(true)
+}
+
+model AttendanceReport {
+  id          String   @id @default(uuid())
+  name        String
+  dateRange   Json
+  filters     Json?
+  format      String
+  generatedBy String
+  generatedAt DateTime @default(now())
+  url         String?
+  summary     Json?
+}
+
+model ResetCode {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  code      String
+  purpose   ResetPurpose
+  expiresAt DateTime
+  isUsed    Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  usedAt    DateTime?
+}
+
 model SystemSettings {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(uuid())
   key         String   @unique
   value       String
   description String?
   lastUpdated DateTime @default(now())
-  updatedBy   String?  @db.ObjectId
-
-  @@map("system_settings")
+  updatedBy   String?
 }
 
 model DashboardView {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String   @id @default(uuid())
   name          String   @unique
-  configuration Json // Stores filters, columns, sorting preferences
-  createdBy     String   @db.ObjectId
+  configuration Json
+  createdBy     String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-
-  @@map("dashboard_views")
 }
 
-// Added for NextAuth.js
 model Account {
-  id                String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String  @db.ObjectId
+  id                String  @id @default(uuid())
+  userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.String
-  access_token      String? @db.String
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.String
+  id_token          String?
   session_state     String?
 
   createdAt DateTime @default(now())
@@ -313,30 +276,24 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@map("accounts")
 }
 
-// Added for NextAuth.js
 model Session {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  id           String   @id @default(uuid())
   sessionToken String   @unique
-  userId       String   @db.ObjectId
+  userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@map("sessions")
 }
 
-// Added for NextAuth.js
 model VerificationToken {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(uuid())
   identifier String
   token      String   @unique
   expires    DateTime
 
   @@unique([identifier, token])
-  @@map("verificationtokens") // Note the lowercase 't' in 'verificationtokens' which is the default for MongoDB adapter
 }

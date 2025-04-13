@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
     token &&
     (url.pathname.startsWith("/login") || url.pathname.startsWith("/signup"))
   ) {
+    console.log("reaches middleware" + token)
     const role = token?.role as string | undefined;
     if (role === "STUDENT") {
       return NextResponse.redirect(new URL("/home", request.url));

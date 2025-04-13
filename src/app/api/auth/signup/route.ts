@@ -21,8 +21,29 @@ export async function POST(req: Request) {
       department,
       yearOfStudy,
       emergencyContactName,
-      emergencyContactPhone 
+      emergencyContactPhone,
+      agreedToTerms 
+    }: {
+      name: string;
+      email: string; 
+      phoneNumber: string;
+      studentId: string;
+      password: string;
+      fatherName: string;
+      motherName: string;
+      fatherPhoneNumber: string;
+      motherPhoneNumber: string;
+      dateOfBirth: string;
+      address: string;
+      course: string;
+      department: string;
+      yearOfStudy: number;
+      emergencyContactName: string;
+      emergencyContactPhone: string;
+      agreedToTerms: boolean
     } = body;
+
+    console.log("Received dateOfBirth:", dateOfBirth);
 
     if (!name || !email || !phoneNumber || !studentId || !password) {
       return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
@@ -64,6 +85,7 @@ export async function POST(req: Request) {
             yearOfStudy,
             emergencyContactName,
             emergencyContactPhone,
+            agreedToTerms
           },
         },
       },
