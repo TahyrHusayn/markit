@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx prisma/seed.ts",
-    "deploy": "if [ \"$VERCEL_ENV\" != \"production\" ]; then pnpm run seed; fi && pnpm run build"
+    "deploy": "pnpm run seed && pnpm run build"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
