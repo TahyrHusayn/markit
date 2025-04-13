@@ -1,7 +1,5 @@
-import { PrismaClient } from "@/generated/prisma";
+import { prisma } from "@/db";
 import bcrypt from "bcrypt";
-
-const prisma = new PrismaClient();
 
 async function seed() {
   const superAdminEmail = "yartipawar@jjtu.ac.in";

@@ -5,13 +5,19 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
   const url = request.nextUrl;
+  console.log("Middleware for path:", url.pathname);
+  console.log("Token exists:", !!token);
+
+  if (token) {
+    console.log("Token content:", JSON.stringify(token));
+  }
 
   // Redirect authenticated users from login and signup based on their role
   if (
     token &&
     (url.pathname.startsWith("/login") || url.pathname.startsWith("/signup"))
   ) {
-    console.log("reaches middleware" + token)
+    console.log("reaches middleware" + token);
     const role = token?.role as string | undefined;
     if (role === "STUDENT") {
       return NextResponse.redirect(new URL("/home", request.url));
@@ -54,9 +60,25 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next(); // Allow access to other routes by default
+  // Handle root route - redirect appropriately
+  if (url.pathname === "/") {
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    } else {
+      // Redirect based on role
+      const role = token?.role as string | undefined;
+      if (role === "STUDENT") {
+        return NextResponse.redirect(new URL("/home", request.url));
+      } else if (role === "ADMIN" || role === "SUPER_ADMIN") {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+    }
+  }
+
+  // Allow access to other routes by default
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/login", "/signup", "/home", "/dashboard"],
+  matcher: ["/", "/login", "/signup", "/home", "/dashboard"],
 };

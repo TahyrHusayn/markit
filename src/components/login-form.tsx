@@ -30,11 +30,11 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
     setLoginError(null); // Clear any previous errors
 
     const result = await signIn("credentials", {
-      redirect: false, // Prevent default redirect so we can handle it
-      email: email || undefined, // Send email if provided
-      studentId: studentId || undefined, // Send studentId if provided
+      redirect: false,
+      ...(email ? { email } : {}), // Only include email if it has a value
+      ...(studentId ? { studentId } : {}), // Only include studentId if it has a value
       password,
-      callbackUrl: "/home", // The page to redirect to after successful login
+      callbackUrl: "/home",
     });
 
     if (result?.error) {
@@ -77,7 +77,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
                       placeholder="m@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      required
+                      required={!studentId} // Only required if studentId is empty
                     />
                   </div>
                   <div className="grid gap-3">
@@ -88,7 +88,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
                       placeholder="22bc8010"
                       value={studentId}
                       onChange={(e) => setStudentId(e.target.value)}
-                      required
+                      required={!email} // Only required if email is empty
                     />
                   </div>
                 </div>
@@ -114,11 +114,7 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
                 <Button type="submit" className="w-full">
                   Login
                 </Button>
-                <Button
-                  onClick={() => signOut({ redirect: true, callbackUrl: "/" })}
-                >
-                  Sign Out
-                </Button>
+                
               </div>
               <div className="mt-4 text-center text-sm">
                 Don&apos;t have an account?{" "}

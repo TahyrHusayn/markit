@@ -1,6 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcrypt";
 import { prisma } from "@/db";
 import { User } from "@/generated/prisma";
@@ -14,12 +13,9 @@ type CustomUser = {
 };
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
-      id: "Credentials",
       name: "Credentials",
-      type: "credentials",
       credentials: {
         email: {
           label: "Email",
@@ -42,23 +38,25 @@ export const authOptions: NextAuthOptions = {
       // In your auth.ts, within the authorize function:
       async authorize(credentials: any) {
         try {
-          console.log("Credentials received:", credentials); // Log the credentials
+          console.log("Credentials received:", credentials);
 
           if (!credentials || !credentials.password) {
-            console.log("Password is required");
             throw new Error("Password is required");
           }
 
           const { studentId, password, email } = credentials;
 
-          if (!email && !studentId) {
-            console.log("Email or Student ID is required");
+          // Check if we have either email or studentId
+          if (
+            (!email || email === "undefined") &&
+            (!studentId || studentId === "undefined")
+          ) {
             throw new Error("Email or Student ID is required");
           }
 
           let existingUser: User | null = null;
 
-          if (email) {
+          if (email && email !== "undefined") {
             console.log("Searching for user with email:", email);
             existingUser = await prisma.user.findFirst({
               where: {
@@ -66,7 +64,7 @@ export const authOptions: NextAuthOptions = {
                 role: { in: ["ADMIN", "SUPER_ADMIN"] },
               },
             });
-          } else if (studentId) {
+          } else if (studentId && studentId !== "undefined") {
             console.log("Searching for user with studentId:", studentId);
             existingUser = await prisma.user.findFirst({
               where: {
@@ -116,30 +114,31 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-  },
   pages: {
     signIn: "/login",
     newUser: "/signup",
   },
   callbacks: {
+    async jwt({ token, user }) {
+      // Add user data to the token when a user signs in
+      if (user) {
+        token.id = user.id;
+        token.role = (user as any).role;
+        console.log("JWT callback - adding role to token:", token.role);
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub as string;
+        session.user.id = token.id as string;
         session.user.role = token.role as
           | "STUDENT"
           | "ADMIN"
           | "SUPER_ADMIN"
           | undefined;
+        console.log("Session callback - setting user role:", session.user.role);
       }
       return session;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as CustomUser).role;
-      }
-      return token;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
