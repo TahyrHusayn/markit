@@ -49,10 +49,11 @@ export function LoginForm({ className, ...props }: ComponentProps<"div">) {
     <FpjsProvider
       loadOptions={{ apiKey: process.env.NEXT_PUBLIC_FP_PUBLIC_KEY ?? "" }}
     >
+      {JSON.stringify(session)}
       <div className={cn("flex flex-col gap-6", className)} {...props}>
         <Card>
           <CardHeader>
-            <CardTitle>Login to your account</CardTitle>
+            <CardTitle>Login to your account</CardTitle>  
             <CardDescription>
               Enter your email below to login to your account
             </CardDescription>

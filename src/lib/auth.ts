@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
         },
       },
       // In your auth.ts, within the authorize function:
-      async authorize(credentials) {
+      async authorize(credentials: any) {
         try {
           console.log("Credentials received:", credentials); // Log the credentials
 
