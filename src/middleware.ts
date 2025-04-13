@@ -53,20 +53,20 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Handle root route - redirect appropriately
-  if (url.pathname === "/") {
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    } else {
-      // Redirect based on role
-      const role = token?.role as string | undefined;
-      if (role === "STUDENT") {
-        return NextResponse.redirect(new URL("/home", request.url));
-      } else if (role === "ADMIN" || role === "SUPER_ADMIN") {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-    }
-  }
+  // // Handle root route - redirect appropriately
+  // if (url.pathname === "/") {
+  //   if (!token) {
+  //     return NextResponse.redirect(new URL("/login", request.url));
+  //   } else {
+  //     // Redirect based on role
+  //     const role = token?.role as string | undefined;
+  //     if (role === "STUDENT") {
+  //       return NextResponse.redirect(new URL("/home", request.url));
+  //     } else if (role === "ADMIN" || role === "SUPER_ADMIN") {
+  //       return NextResponse.redirect(new URL("/dashboard", request.url));
+  //     }
+  //   }
+  // }
 
   // Allow access to other routes by default
   return NextResponse.next();
