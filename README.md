@@ -2,15 +2,7 @@
 
 ### Steps to setup the project
 
-1. Specify MONGODB URI in the .env ( if using local docker mongodb steps to follow :-
-   docker run --name markit-mongo -p 27017:27017 -d mongo --replSet rs0
-   docker exec -it markit-mongo bash
-   mongosh
-   rs.initiate()
-   exit
-   exit
-   use this uri type because most probably the replica will give you error (mongodb://localhost:27017/dba?replicaSet=rs0&directConnection=true)
-)
+1. Specify postgres DATABASE_URL in .env
 
 2. Specify NEXTAUTH_SECRET in .env 
 
