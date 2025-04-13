@@ -1,69 +1,113 @@
 import { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcrypt";
-
 import { prisma } from "@/db";
+import { User } from "@/generated/prisma";
+
+// Define a custom user type that extends the built-in NextAuth User
+type CustomUser = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  role?: "STUDENT" | "ADMIN" | "SUPER_ADMIN";
+};
 
 export const authOptions: NextAuthOptions = {
-  // Configure one or more authentication providers
+  adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
       id: "Credentials",
       name: "Credentials",
       type: "credentials",
       credentials: {
-        studenId: { label: "Student ID", type: "text", placeholder: "22bc8010" },
-        password: { label: "Password", type: "password", placeholder: "password" }
+        email: {
+          label: "Email",
+          type: "email",
+          placeholder: "me@example.com",
+          optional: true,
+        },
+        studentId: {
+          label: "Student ID",
+          type: "text",
+          placeholder: "22bc8010",
+          optional: true,
+        },
+        password: {
+          label: "Password",
+          type: "password",
+          placeholder: "password",
+        },
       },
+      // In your auth.ts, within the authorize function:
       async authorize(credentials) {
         try {
-          if (!credentials || !credentials.studenId || !credentials.password) {
-            throw new Error("Student ID and password are required");
+          console.log("Credentials received:", credentials); // Log the credentials
+
+          if (!credentials || !credentials.password) {
+            console.log("Password is required");
+            throw new Error("Password is required");
           }
-          const { studenId, password } = credentials;
 
-          // Find existing user
-          const existingUser = await prisma.user.findFirst({
-            where: { student: {
-              studentId: studenId
-            } },
-          });
+          const { studentId, password, email } = credentials;
 
-          if (existingUser) {
-            // Compare provided password with stored hash
-            const passwordValidation = await bcrypt.compare(password, (existingUser.password ?? ""));
-            if (passwordValidation) {
-              return {
-                id: existingUser.id.toString(),
-                name: existingUser.name,
-                email: existingUser.email,
-              };
-            } else {
-              throw new Error("Invalid password");
-            }
-          } else {
-            // Hash the provided password
-            // const hashedPassword = await bcrypt.hash(password, 10);
+          if (!email && !studentId) {
+            console.log("Email or Student ID is required");
+            throw new Error("Email or Student ID is required");
+          }
 
-            // Create new user
-            const newUser = await prisma.user.create({
-              data: {
-                name: "",
-                email: "",
-                phoneNumber: "",
-                role: "STUDENT",
-                student: {
-                  create: {
-                    studentId: ""
-                  }
-                }
+          let existingUser: User | null = null;
+
+          if (email) {
+            console.log("Searching for user with email:", email);
+            existingUser = await prisma.user.findFirst({
+              where: {
+                email: email,
+                role: { in: ["ADMIN", "SUPER_ADMIN"] },
               },
             });
+          } else if (studentId) {
+            console.log("Searching for user with studentId:", studentId);
+            existingUser = await prisma.user.findFirst({
+              where: {
+                student: {
+                  studentId: studentId,
+                },
+              },
+              include: {
+                student: true,
+              },
+            });
+          }
+
+          console.log("User found:", existingUser); // Log the user object (or null)
+
+          if (!existingUser) {
+            console.log("User not found");
+            return null;
+          }
+
+          if (!existingUser.password) {
+            console.log("User has no password set");
+            throw new Error("User has no password set");
+          }
+
+          const passwordValidation = await bcrypt.compare(
+            password,
+            existingUser.password
+          );
+          console.log("Password match:", passwordValidation); // Log the result of password comparison
+
+          if (passwordValidation) {
             return {
-              id: newUser.id.toString(),
-              name: newUser.name,
-              email: newUser.email,
-            };
+              id: existingUser.id.toString(),
+              name: existingUser.name,
+              email: existingUser.email,
+              role: existingUser.role,
+            } as CustomUser;
+          } else {
+            console.log("Invalid password");
+            throw new Error("Invalid password");
           }
         } catch (error) {
           console.error("Authorization error:", error);
@@ -73,7 +117,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
   pages: {
     signIn: "/login",
@@ -81,9 +125,22 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, token }) {
-      session.user.id = token.sub;
+      if (session.user) {
+        session.user.id = token.sub as string;
+        session.user.role = token.role as
+          | "STUDENT"
+          | "ADMIN"
+          | "SUPER_ADMIN"
+          | undefined;
+      }
       return session;
     },
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as CustomUser).role;
+      }
+      return token;
+    },
   },
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
 };
